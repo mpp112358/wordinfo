@@ -26,8 +26,8 @@
   (url-encode-url (concat base-url word)))
 
 (defun define (word)
-  "Looks up INFO about WORD in dictionaryapi.dev"
-  (interactive "sWORD: \nsINFO: ")
+  "Look up WORD in dictionaryapi.dev."
+  (interactive "sWORD: ")
   (url-retrieve (define-build-url define-dictionary-url word)
                 (lambda (status)
                   (when (plist-get status :error)
