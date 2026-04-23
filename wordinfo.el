@@ -9,7 +9,7 @@
 ;; Version: 0.0.1
 ;; Keywords: convenience
 ;; Homepage: https://github.com/mpp112358/wordinfo
-;; Package-Requires: ((emacs "24.3"))
+;; Package-Requires: ((emacs "27.1"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -28,6 +28,27 @@
 
 (defconst wordinfo-dictionary-url "https://lingua-robot.p.rapidapi.com/language/v1/entries/en/")
 
+(defun wordinfo-lexemes (word-json)
+  "Extract array of lexemes from WORD-JSON."
+  (gethash "lexemes" (aref (gethash "entries" word-json) 0)))
+
+(defun wordinfo-senses (lexeme-json)
+  "Extract array of senses from LEXEME-JSON."
+  (gethash "senses" lexeme-json))
+
+(defun wordinfo-print-definition (sense-json lemma part-of-speech)
+  "Print definition for LEMMA and PART-OF-SPEECH contained in SENSE-JSON."
+  (let ((definition (gethash "definition" sense-json))
+        (labels (gethash "labels" sense-json)))
+    (princ (concat lemma "(" part-of-speech ")" definition))))
+
+(defun wordinfo-print-definitions (word-json)
+  "Print definitions from WORD-JSON."
+  (let* ((lexeme-json (aref (wordinfo-lexemes word-json) 0))
+         (lemma (gethash "lemma" lexeme-json))
+         (part-of-speech (gethash "partOfSpeech" lexeme-json)))
+    (dolist (sense (wordinfo-senses lexeme-json))
+      (wordinfo-print-definition sense lemma part-of-speech))))
 
 (defun wordinfo-build-url (base-url word)
   "Build full query url from BASE-URL and WORD."
@@ -60,7 +81,7 @@
                     (let ((body (buffer-substring-no-properties (wordinfo-http-end-of-headers)
                                                                 (point-max))))
                       (with-help-window "*wordinfo*"
-                        (princ body)))))))
+                        (wordinfo-print-definitions (json-parse-string body))))))))
 
 (provide 'wordinfo)
 ;;; wordinfo.el ends here
