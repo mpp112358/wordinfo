@@ -74,6 +74,7 @@
           `(("Content-Type" . "application/json")
             ("x-rapidapi-host" . "lingua-robot.p.rapidapi.com")
             ("x-rapidapi-key" . ,api-key))))
+    (message "Api-key: %s" api-key)
     (url-retrieve (wordinfo-build-url wordinfo-dictionary-url word)
                   (lambda (status)
                     (when (plist-get status :error)
