@@ -93,7 +93,7 @@
              nil)))
 
 (defun wordinfo-get-json (what)
-  "Get WHAT from JSON response body from buffer named '*wordinfo-response-json'."
+  "Get WHAT from JSON response body from buffer named '*wordinfo-response-json*'."
   (interactive "sWhat to parse? ")
   (with-current-buffer "*wordinfo-response-json*"
     (let ((body (buffer-substring-no-properties (point-min) (point-max))))

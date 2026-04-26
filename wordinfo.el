@@ -49,6 +49,35 @@
                       (format "%d. %s" (1+ idx) elt))
                     (wordinfo-get-first-lexeme-definitions wordinfo-struct))))
 
+(defun wordinfo-get-json (word)
+  "Look up WORD in dictionaryapi.dev and put json into '*wordinfo-response-json*'."
+  (interactive "sWORD: ")
+  (message "Retrieving %s" (wordinfo-build-url wordinfo-dictionary-url word))
+  (let* ((credentials (auth-source-search :host "rapidapi.com"
+                                          :user "wordinfo"
+                                          :require '(:secret)))
+         (api-key (when credentials
+                    (funcall (plist-get (car credentials) :secret))))
+         (url-request-extra-headers
+          `(("Content-Type" . "application/json")
+            ("x-rapidapi-host" . "lingua-robot.p.rapidapi.com")
+            ("x-rapidapi-key" . ,api-key)))
+         (coding-system-for-read 'binary))
+    (url-retrieve (wordinfo-build-url wordinfo-dictionary-url word)
+                  (lambda (status)
+                    (when (plist-get status :error)
+                      (error "Failed to retrieve URL: %s" (plist-get status :error)))
+                    (let ((body (decode-coding-string
+                                 (buffer-substring-no-properties (wordinfo-http-end-of-headers)
+                                                                 (point-max))
+                                 'utf-8)))
+                      (get-buffer-create "*wordinfo-response-json*")
+                      (with-current-buffer "*wordinfo-response-json*"
+                        (erase-buffer)
+                        (insert body)
+                        (json-mode)
+                        (json-pretty-print-buffer)))))))
+
 (defun wordinfo (word)
   "Look up WORD in dictionaryapi.dev."
   (interactive "sWORD: ")
