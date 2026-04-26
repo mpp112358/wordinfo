@@ -26,29 +26,9 @@
 ;; 'security add-internet-password -s "rapidapi.com" -a "wordinfo" -w "your-api-key"'
 ;; If not such an entry is present, it will ask for credentials.
 
+(require 'wordinfo-get)
+
 (defconst wordinfo-dictionary-url "https://lingua-robot.p.rapidapi.com/language/v1/entries/en/")
-
-(defun wordinfo-lexemes (word-json)
-  "Extract array of lexemes from WORD-JSON."
-  (gethash "lexemes" (aref (gethash "entries" word-json) 0)))
-
-(defun wordinfo-senses (lexeme-json)
-  "Extract array of senses from LEXEME-JSON."
-  (gethash "senses" lexeme-json))
-
-(defun wordinfo-print-definition (sense-json lemma part-of-speech)
-  "Print definition for LEMMA and PART-OF-SPEECH contained in SENSE-JSON."
-  (let ((definition (gethash "definition" sense-json))
-        (labels (gethash "labels" sense-json)))
-    (princ (concat lemma "(" part-of-speech ")" definition))))
-
-(defun wordinfo-print-definitions (word-json)
-  "Print definitions from WORD-JSON."
-  (let* ((lexeme-json (aref (wordinfo-lexemes word-json) 0))
-         (lemma (gethash "lemma" lexeme-json))
-         (part-of-speech (gethash "partOfSpeech" lexeme-json)))
-    (dolist (sense (wordinfo-senses lexeme-json))
-      (wordinfo-print-definition sense lemma part-of-speech))))
 
 (defun wordinfo-build-url (base-url word)
   "Build full query url from BASE-URL and WORD."
@@ -60,6 +40,14 @@
   (re-search-forward "^$" nil 'move)
   (forward-char)
   (point))
+
+(defun wordinfo-print-definitions (wordinfo-struct)
+  "Print definitions from WORDINFO-STRUCT."
+  (seq-do
+   (lambda (elt) (princ (format "%s\n" elt)))
+   (seq-map-indexed (lambda (elt idx)
+                      (format "%d. %s" (1+ idx) elt))
+                    (wordinfo-get-first-lexeme-definitions wordinfo-struct))))
 
 (defun wordinfo (word)
   "Look up WORD in dictionaryapi.dev."
@@ -73,14 +61,16 @@
          (url-request-extra-headers
           `(("Content-Type" . "application/json")
             ("x-rapidapi-host" . "lingua-robot.p.rapidapi.com")
-            ("x-rapidapi-key" . ,api-key))))
-    (message "headers: %s" url-request-extra-headers)
+            ("x-rapidapi-key" . ,api-key)))
+         (coding-system-for-read 'binary))
     (url-retrieve (wordinfo-build-url wordinfo-dictionary-url word)
                   (lambda (status)
                     (when (plist-get status :error)
                       (error "Failed to retrieve URL: %s" (plist-get status :error)))
-                    (let ((body (buffer-substring-no-properties (wordinfo-http-end-of-headers)
-                                                                (point-max))))
+                    (let ((body (decode-coding-string
+                                 (buffer-substring-no-properties (wordinfo-http-end-of-headers)
+                                                                 (point-max))
+                                 'utf-8)))
                       (with-help-window "*wordinfo*"
                         (wordinfo-print-definitions (json-parse-string body))))))))
 
