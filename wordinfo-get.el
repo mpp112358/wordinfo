@@ -92,7 +92,7 @@
                          senses nil)
              nil)))
 
-(defun wordinfo-get-json (what)
+(defun wordinfo-get-parse-response (what)
   "Get WHAT from JSON response body from buffer named '*wordinfo-response-json*'."
   (interactive "sWhat to parse? ")
   (with-current-buffer "*wordinfo-response-json*"

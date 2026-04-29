@@ -49,7 +49,7 @@
                       (format "%d. %s" (1+ idx) elt))
                     (wordinfo-get-first-lexeme-definitions wordinfo-struct))))
 
-(defun wordinfo-get-json (word)
+(defun wordinfo-retrieve-json (word)
   "Look up WORD in dictionaryapi.dev and put json into '*wordinfo-response-json*'."
   (interactive "sWORD: ")
   (message "Retrieving %s" (wordinfo-build-url wordinfo-dictionary-url word))
