@@ -92,6 +92,41 @@
                          senses nil)
              nil)))
 
+(defun wordinfo-get-entry-lexemes (entry)
+  "Get lexemes from ENTRY."
+  (gethash "lexemes" entry))
+
+(defun wordinfo-get-lexeme-senses (lexeme)
+  "Get senses of a LEXEME."
+  (gethash "senses" lexeme))
+
+(defun wordinfo-get-lexeme-part-of-speech (lexeme)
+  "Get part of speech of a LEXEME."
+  (gethash "partOfSpeech" lexeme))
+
+(defun wordinfo-get-lexeme-definitions (lexeme)
+  "Get all definitions inside a LEXEME."
+  (let* ((senses (gethash "senses" lexeme)))
+    (vconcat (seq-reduce (lambda (acc cur) (cons (gethash "definition" cur) acc))
+                         senses nil)
+             nil)))
+
+(defun wordinfo-get-lexeme-definitions-with-part-of-speech (lexeme)
+  "Get (partOfSpeech . definition) for every definition inside a LEXEME."
+  (let* ((part-of-speech (wordinfo-get-lexeme-part-of-speech lexeme))
+         (senses (wordinfo-get-lexeme-senses lexeme)))
+    (vconcat (seq-reduce (lambda (acc cur)
+                           (cons (cons part-of-speech (gethash "definition" cur)) acc))
+                         senses nil)
+             nil)))
+
+(defun wordinfo-get-entry-definitions-with-part-of-speech (entry)
+  "Get (partOfSpeech . definition) for every definition inside an ENTRY."
+  (seq-reduce (lambda (acc cur) (vconcat acc cur))
+              (seq-map #'wordinfo-get-lexeme-definitions-with-part-of-speech
+                       (wordinfo-get-entry-lexemes entry))
+              nil))
+
 (defun wordinfo-get-parse-response (what)
   "Get WHAT from JSON response body from buffer named '*wordinfo-response-json*'."
   (interactive "sWhat to parse? ")
