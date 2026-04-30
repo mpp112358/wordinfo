@@ -43,11 +43,16 @@
 
 (defun wordinfo-print-definitions (wordinfo-struct)
   "Print definitions from WORDINFO-STRUCT."
-  (seq-do
-   (lambda (elt) (princ (format "%s\n" elt)))
-   (seq-map-indexed (lambda (elt idx)
-                      (format "%d. %s" (1+ idx) elt))
-                    (wordinfo-get-first-lexeme-definitions wordinfo-struct))))
+  (let* ((entry (wordinfo-get-first-entry wordinfo-struct)))
+    (seq-do
+     (lambda (elt) (princ (format "%s\n" elt)))
+     (seq-map-indexed (lambda (elt idx)
+                        (format "%2d. (%s) %s" (1+ idx) (car elt) (cdr elt)))
+                      (wordinfo-get-entry-definitions-with-part-of-speech entry)))))
+
+(defun wordinfo-print-pronuntiation (wordinfo-struct)
+  "Print first UK pronuntiation from WORDINFO-STRUCT."
+  (princ (format "%s\n" (wordinfo-get-first-transcription wordinfo-struct))))
 
 (defun wordinfo-retrieve-json (word)
   "Look up WORD in dictionaryapi.dev and put json into '*wordinfo-response-json*'."
@@ -96,12 +101,20 @@
                   (lambda (status)
                     (when (plist-get status :error)
                       (error "Failed to retrieve URL: %s" (plist-get status :error)))
-                    (let ((body (decode-coding-string
-                                 (buffer-substring-no-properties (wordinfo-http-end-of-headers)
-                                                                 (point-max))
-                                 'utf-8)))
+                    (let* ((body (decode-coding-string
+                                  (buffer-substring-no-properties (wordinfo-http-end-of-headers)
+                                                                  (point-max))
+                                  'utf-8))
+                           (wordinfo-struct (json-parse-string body)))
                       (with-help-window "*wordinfo*"
-                        (wordinfo-print-definitions (json-parse-string body))))))))
+                        (wordinfo-print-pronuntiation wordinfo-struct)
+                        (wordinfo-print-definitions wordinfo-struct)))))))
+
+(defun wordinfo-at-point ()
+  "Look up word at point in lingua-robot api."
+  (interactive)
+  (let ((word (thing-at-point 'word)))
+    (wordinfo word)))
 
 (provide 'wordinfo)
 ;;; wordinfo.el ends here
